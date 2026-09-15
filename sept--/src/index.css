@@ -1,0 +1,1255 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg:     #FDF8F0;
+  --color-ink:    #2E2A26;
+  --color-muted:  #8A8279;
+  --color-line:   #E3DCD0;
+  --color-ghost:  #D8D0C4;
+
+  --color-coral:  #FF7A59;
+  --color-kuning: #FFC94A;
+  --color-sage:   #7FB99C;
+  --color-langit: #6FA8DC;
+  --color-lilac:  #B49BE0;
+
+  --color-on-coral:  #5C1F0E;
+  --color-on-kuning: #4D3702;
+  --color-on-sage:   #123528;
+  --color-on-langit: #0E2F4D;
+  --color-on-lilac:  #2E1B4D;
+
+  --font-sans:    "Inter Tight", system-ui, sans-serif;
+  --font-display: "Familjen Grotesk", Georgia, serif;
+
+  --ease-in:        cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-smooth:    cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:       cubic-bezier(0.6, 0, 1, 1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  background: var(--color-bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  overscroll-behavior-y: none;
+}
+
+/* Judul besar. Dipakai lewat class .h-display, bukan diulang di tiap komponen. */
+.h-display {
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+/* Aksen italic. Hemat — nama orang, satu-dua kata kunci, caption. */
+.italic-accent {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Target sentuh minimum. Pasang di semua yang bisa ditekan. */
+.tap {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Sorot hangat melayang di /pembuka (belakang isi). Murni transform.
+
+   TANPA `filter: blur()` — dan itu wajib, bukan selera. Elemen ini 90vmax
+   (~1200px+) dan keyframe-nya mengandung `scale()`. Layer yang di-filter
+   TIDAK bisa sekadar diregangkan oleh compositor: tiap skala baru
+   memaksa raster ulang, jadi blur 30px di area sebesar itu dihitung ulang
+   terus-menerus selama 15 detik, berulang selamanya. Itu penyebab utama
+   `/` terasa berat.
+
+   Penggantinya: falloff gradasi diperhalus sendiri (satu titik tengah
+   tambahan di 38%) supaya bentuknya tetap selembut versi ber-blur. */
+.cahaya-sapu {
+  background: radial-gradient(
+    circle,
+    rgba(255, 253, 248, 0.72),
+    rgba(255, 253, 248, 0.34) 38%,
+    rgba(255, 253, 248, 0.1) 56%,
+    rgba(255, 253, 248, 0) 72%
+  );
+  will-change: transform;
+  animation: cahaya-sapu 15s ease-in-out infinite alternate;
+}
+
+@keyframes cahaya-sapu {
+  from { transform: translate(-64%, -58%) scale(0.95); }
+  to   { transform: translate(-38%, -44%) scale(1.15); }
+}
+
+/* Kursor kustom: sembunyikan kursor asli hanya saat komponennya aktif. */
+.kursor-kustom-aktif,
+.kursor-kustom-aktif * {
+  cursor: none;
+}
+
+/* Panggung pemiring. Perspective di sini supaya label bisa membalik
+   (rotateY) tanpa memberi perspective ke lapis posisi di atasnya. */
+.kursor-panggung {
+  position: absolute;
+  left: 0;
+  top: 0;
+  perspective: 600px;
+  will-change: transform;
+}
+
+/* Titik tinta — bentuk kursor default KHUSUS /penutup, lebih ringan
+   daripada makhluk bermata di halaman lain (lihat komentar `ringan` di
+   KursorKustom.jsx). Satu elemen, satu warna solid, tanpa border/box-shadow
+   berlapis. */
+.kursor-titik {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  display: block;
+  width: 13px;
+  height: 13px;
+  border-radius: 9999px;
+  background: var(--color-ink);
+}
+
+/* Makhluk bulat bermata. Bungkusnya cuma penampung berukuran tetap; badan
+   dan wajah adalah dua lapis terpisah di dalamnya supaya wajahnya tidak
+   ikut berputar/memipih bersama badan. */
+.kursor-makhluk {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  display: block;
+  width: 24px;
+  height: 24px;
+}
+
+/* Garis tinta tipis mengelilinginya bukan hiasan: tanpa itu badan coral
+   hilang di atas taplak kotak-kotak /pesan yang juga coral. */
+.makhluk-badan {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border: 1.5px solid #2e2a26;
+  border-radius: 9999px;
+  background: #ff7a59;
+  /* box-shadow, BUKAN filter: drop-shadow. Badan ini di-scale tiap frame;
+     drop-shadow memaksa raster ulang tiap perubahan, box-shadow tidak. */
+  box-shadow: 0 3px 5px rgba(46, 42, 38, 0.3);
+}
+
+.makhluk-wajah {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2px;
+  /* Sedikit di atas tengah — mata yang pas di tengah lingkaran terbaca
+     seperti kancing, bukan wajah. */
+  padding-bottom: 2px;
+}
+
+/* Putih mata memicing berkala. Transform-only, dua elemen 7px — biayanya
+   dapat diabaikan (lihat aturan performa §5.6.5). */
+.makhluk-mata {
+  display: grid;
+  place-items: center;
+  width: 7.4px;
+  height: 7.4px;
+  border-radius: 9999px;
+  background: #fffdfa;
+  animation: makhluk-kedip 3s ease-in-out infinite;
+  transition:
+    transform 0.11s ease-out,
+    background-color 0.11s ease-out;
+}
+
+.makhluk-mata:last-child {
+  animation-delay: 0.06s;
+}
+
+@keyframes makhluk-kedip {
+  0%, 88%, 100% { transform: scaleY(1); }
+  93%           { transform: scaleY(0.1); }
+}
+
+/* Dipejamkan selama tombol ditekan. `animation: none` wajib — animasi
+   mengalahkan deklarasi biasa, jadi tanpa itu `transform` di bawah tak
+   akan pernah terpakai. Melepas animasinya mengembalikan nilai dasar,
+   dan transisi di atas yang menutupnya dengan halus.
+
+   Garisnya jadi TINTA, bukan putih yang menipis: garis putih di atas badan
+   coral terbaca seperti celah, bukan kelopak. `scaleY(0.22)` dari mata
+   7,4px = garis ~1,6px yang panjangnya persis selebar matanya — kalau
+   dipipihkan lebih jauh (0.08) garisnya di bawah 1px dan hilang. */
+.kursor-makhluk[data-pejam] .makhluk-mata {
+  animation: none;
+  transform: scaleY(0.22);
+  background: #2e2a26;
+}
+
+/* Maniknya ikut hilang — mata terpejam yang maniknya masih terlihat
+   sebagai garis gelap terbaca seperti terjepit, bukan terpejam. */
+.kursor-makhluk[data-pejam] .makhluk-biji {
+  opacity: 0;
+}
+
+.makhluk-biji {
+  display: block;
+  width: 3.6px;
+  height: 3.6px;
+  border-radius: 9999px;
+  background: #2e2a26;
+  transition: opacity 0.11s ease-out;
+}
+
+/* Label stiker. Sudutnya sengaja tidak seragam — empat radius berbeda
+   membuatnya terbaca sebagai potongan tangan, bukan pill generik. */
+.kursor-label {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  display: block;
+  white-space: nowrap;
+  padding: 0.3rem 0.72rem 0.36rem;
+  border: 1.4px solid #2e2a26;
+  border-radius: 0.75rem 0.55rem 0.8rem 0.5rem;
+  background: var(--color-bg);
+  color: #2e2a26;
+  font-size: 0.95rem;
+  line-height: 1;
+  box-shadow: 0 5px 8px rgba(46, 42, 38, 0.3);
+}
+
+.kursor-kaca {
+  position: absolute;
+  left: 0;
+  top: 0;
+  translate: -50% -50%;
+  display: block;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(46, 42, 38, 0.5);
+  border-radius: 9999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cahaya-sapu {
+    animation: none;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* Wash warna aksen di /penutup. 5 lapisan, tiap satu 17s dengan delay
+   negatif berbeda — pada satu waktu 1–2 lapisan tampak samar. */
+.latar-lebur {
+  opacity: 0;
+  animation: latar-lebur 17s ease-in-out infinite;
+}
+
+@keyframes latar-lebur {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 0.06; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latar-lebur { animation: none; opacity: 0; }
+}
+
+/* ── Konfeti kertas ─────────────────────────────────────────────────────
+   Posisi, putaran, dan opacity SELURUHNYA ditulis dari JS (Konfeti.jsx).
+   Yang di sini cuma bentuk dan bahannya — jangan menambahkan `transition`
+   di `.konfeti`: rAF sudah menulis transform tiap frame, dan transisi CSS
+   di atasnya membuat gerakannya tertinggal dan berdenyut. */
+.konfeti-lapis {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Di halaman yang men-scroll, lapisannya harus `fixed`: kepingannya jatuh
+   di ruang LAYAR, bukan ikut tergulung bersama isi halaman. Ditulis sebagai
+   class sendiri, bukan utility `fixed` dari Tailwind — dua aturan
+   `position` dengan specificity sama akan diputus oleh urutan berkas, dan
+   itu urusan yang tidak perlu dipertaruhkan. */
+.konfeti-tetap {
+  position: fixed;
+}
+
+.konfeti {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Tiap kepingan lapisan komposit sendiri. Tanpa ini, 28 elemen yang
+     bergerak memaksa cat ulang seluruh lapisan induknya tiap frame. */
+  will-change: transform, opacity;
+  /* Titik putarnya di tengah kepingan, bukan di sudut kiri-atas —
+     kalau tidak, kepingannya mengorbit alih-alih berputar di tempat. */
+  transform-origin: 50% 50%;
+}
+
+.konfeti-kotak {
+  border-radius: 1px;
+}
+
+/* Pita melengkung: satu sisi membulat penuh, sisi lain lancip. Bentuk
+   potongan kertas yang tergunting, bukan persegi sempurna. */
+.konfeti-pita {
+  border-radius: 999px 2px 999px 2px;
+}
+
+/* Sobekan: tepinya tidak rata. Ini yang membedakan "kertas" dari
+   "konfeti plastik" — kertas robek, tidak terpotong rapi. */
+.konfeti-sobek {
+  clip-path: polygon(0 12%, 46% 0, 100% 22%, 88% 74%, 100% 100%, 38% 88%, 6% 100%);
+}
+
+/* ── Amplop surat (navigasi akhir /pesan) ───────────────────────────────
+   Lapisan belakang→depan: badan belakang · kertas · badan depan · tutup.
+   Kertas keluar dari sela badan belakang & badan depan. */
+/* Satu keluarga easing & durasi untuk SEMUA bagian amplop. Kalau tiap
+   elemen punya kurva/durasi sendiri, gerakannya saling menyalip dan
+   terasa patah-patah. */
+.amplop {
+  --buka: cubic-bezier(0.2, 0.85, 0.3, 1);
+  --tutup: cubic-bezier(0.5, 0.05, 0.35, 1);
+  --lama: 0.66s;
+
+  position: relative;
+  width: min(86vw, 26rem);
+  aspect-ratio: 8 / 5;
+  perspective: 1000px;
+  cursor: pointer;
+  /* Amplop TIDAK bergeser saat hover — cukup membuka. Yang berubah hanya
+     highlight luarnya (bayangan lebih dalam + tepi cahaya), sebahasa
+     dengan hover kartu pesan. Tanpa kilau/shine. */
+  filter: drop-shadow(0 26px 44px rgba(46, 42, 38, 0.32));
+  transition: filter var(--lama) var(--tutup);
+}
+
+.amplop > * {
+  position: absolute;
+  border-radius: 0.55rem;
+}
+
+/* Badan belakang = bagian DALAM amplop. Sudut atas siku supaya segaris
+   dengan alas tutup. Gradasi lembut, bukan warna rata (itu yang bikin
+   kaku). */
+.amplop-belakang {
+  inset: 0;
+  border-radius: 0 0 0.55rem 0.55rem;
+  background: linear-gradient(
+    to bottom,
+    var(--amplop-dalam),
+    var(--amplop-tutup) 42%
+  );
+  z-index: 1;
+}
+
+/* kertas surat: tersembunyi di dalam, meluncur ke atas saat dibuka.
+   Lebar hampir penuh (3.5% tiap sisi) supaya badan belakang cuma terlihat
+   sebagai tepi tipis — bukan dua "kuping" kotak. Isi rata-atas supaya
+   garis-garisnya terlihat di bagian yang tidak tertutup badan depan. */
+.amplop-kertas {
+  left: 3.5%;
+  right: 3.5%;
+  bottom: 6%;
+  height: 86%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 6.5%;
+  padding: 11% 11% 0;
+  border-radius: 0.3rem;
+  background: var(--color-bg);
+  overflow: hidden; /* mengurung kilau */
+  box-shadow:
+    0 -3px 12px rgba(46, 42, 38, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 0 0 0 rgba(255, 253, 250, 0),
+    0 0 0 0 rgba(46, 42, 38, 0),
+    0 0 0 0 rgba(255, 253, 250, 0),
+    0 0 0 0 rgba(255, 253, 250, 0);
+  transform: translateY(3%);
+  will-change: transform;
+  /* ARAH MENUTUP (aturan dasar): kertas turun DULUAN, tanpa delay.
+     Bayangan & brightness ikut kurva yang sama, tanpa delay. */
+  transition:
+    transform var(--lama) var(--tutup) 0s,
+    box-shadow var(--lama) var(--tutup) 0s,
+    filter var(--lama) var(--tutup) 0s;
+}
+
+/* Kilau menyapu di atas kertas — teknik yang sama dengan `.kartu-kilau`
+   di kartu pesan, tapi disetel untuk permukaan krem: ada tepi gelap tipis
+   sebelum pita terangnya supaya sapuannya terbaca di atas warna terang. */
+.kertas-kilau {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    112deg,
+    transparent 32%,
+    rgba(46, 42, 38, 0.05) 43%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 66%
+  );
+  transform: translateX(-135%);
+  transition: transform 0.75s var(--ease-smooth);
+}
+
+.amplop-baris {
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-ghost);
+}
+
+/* badan depan — menutupi bagian bawah kertas + lipatan V khas amplop */
+.amplop-depan {
+  inset-inline: 0;
+  bottom: 0;
+  height: 58%;
+  z-index: 3;
+  border-radius: 0 0 0.55rem 0.55rem;
+  background:
+    linear-gradient(
+        to bottom right,
+        #0000 calc(50% - 0.5px),
+        rgba(46, 42, 38, 0.09) calc(50% - 0.5px) calc(50% + 0.5px),
+        #0000 calc(50% + 0.5px)
+      )
+      left / 50% 100% no-repeat,
+    linear-gradient(
+        to bottom left,
+        #0000 calc(50% - 0.5px),
+        rgba(46, 42, 38, 0.09) calc(50% - 0.5px) calc(50% + 0.5px),
+        #0000 calc(50% + 0.5px)
+      )
+      right / 50% 100% no-repeat,
+    linear-gradient(155deg, var(--amplop-terang), var(--amplop) 58%);
+  overflow: hidden;
+}
+
+/* Pita udara (airmail) di kedua sisi badan depan. */
+.amplop-depan::before,
+.amplop-depan::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0.85rem;
+  background: repeating-linear-gradient(
+    48deg,
+    var(--amplop-dalam) 0 5px,
+    var(--color-bg) 5px 10px
+  );
+  opacity: 0.85;
+}
+.amplop-depan::before {
+  left: 0;
+}
+.amplop-depan::after {
+  right: 0;
+}
+
+/* Tutup segitiga, berengsel di tepi atas.
+   ARAH MENUTUP (aturan dasar): tutup MENUNGGU kertas turun dulu (delay
+   0.26s), lalu menutup. `z-index` kembali ke depan di 0.5s — saat bidang
+   tutup melewati 90° dalam perjalanan pulang. */
+.amplop-tutup {
+  inset-inline: 0;
+  top: 0;
+  height: 52%;
+  z-index: 4;
+  transform-origin: top center;
+  will-change: transform;
+  /* Tanpa `filter` di sini — drop-shadow pada elemen yang berputar tiap
+     frame itu mahal dan bikin tersendat. Kedalaman datang dari path
+     bayangan di dalam SVG (animasi `opacity`, murah). */
+  transition:
+    transform var(--lama) var(--tutup) 0.28s,
+    z-index 0s linear 0.62s;
+}
+
+.amplop-tutup svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.tutup-muka {
+  fill: var(--amplop-tutup);
+}
+
+.tutup-bayang {
+  fill: #2e2a26;
+  opacity: 0;
+  transition: opacity var(--lama) var(--tutup) 0.28s;
+}
+
+/* lak lilin kecil di ujung tutup */
+.amplop-lak {
+  position: absolute;
+  left: 50%;
+  top: 62%;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: -0.8rem 0 0 -0.8rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at 34% 30%,
+    color-mix(in oklab, var(--color-coral) 80%, #fff),
+    var(--color-coral) 62%
+  );
+  box-shadow: inset 0 -2px 5px rgba(46, 42, 38, 0.28);
+}
+
+/* ARAH MEMBUKA — urutannya dibalik dari arah menutup:
+   tutup duluan (delay 0), kertas menyusul setelah tutup lewat 90°.
+   Nilai rotasi HARUS sama untuk :hover dan [data-buka]; kalau beda,
+   klik-setelah-hover memicu animasi ulang yang tersendat. */
+.amplop:hover .amplop-tutup,
+.amplop[data-buka] .amplop-tutup {
+  transform: rotateX(-168deg);
+  z-index: 0;
+  transition:
+    transform var(--lama) var(--buka) 0s,
+    z-index 0s linear 0.2s;
+}
+
+.amplop:hover,
+.amplop[data-buka] {
+  transition-timing-function: var(--buka);
+}
+
+/* Setelah melewati 90°, yang terlihat adalah sisi DALAM tutup — warnanya
+   ditukar tepat di titik itu, jadi pergantiannya tak terlihat. */
+.amplop:hover .tutup-bayang,
+.amplop[data-buka] .tutup-bayang {
+  opacity: 0.16;
+  transition: opacity var(--lama) var(--buka) 0s;
+}
+
+/* MEMBUKA (hover): kertas mengintip, menyusul setelah tutup lewat 90°.
+   Pakai longhand (bukan shorthand `transition`) supaya transisi box-shadow
+   & filter dari aturan dasar tidak ikut terhapus. Urutan properti di dasar:
+   transform, box-shadow, filter. */
+.amplop:hover .amplop-kertas {
+  transition-timing-function: var(--buka);
+  transition-delay: 0.3s, 0s, 0s;
+}
+
+/* DIKLIK: lebih cepat & delay lebih pendek — saat diklik tutupnya biasanya
+   sudah terbuka dari hover, jadi delay panjang cuma jadi waktu mati.
+   Harus SETELAH aturan :hover di atas (spesifisitas sama, urutan menang). */
+.amplop[data-buka] .amplop-kertas {
+  transition-duration: 0.46s, var(--lama), var(--lama);
+  transition-timing-function: var(--buka);
+  transition-delay: 0.2s, 0s, 0s;
+}
+
+/* Highlight + kilau ada di KERTAS-nya, bukan amplopnya.
+   Dua slot terakhir = glow kuning hangat: satu lingkar rapat supaya tepinya
+   terbaca, satu lebar & lembut supaya cahayanya melimpah ke amplop. Dipisah
+   dua lapis karena satu bayangan besar saja terlihat kabur, bukan bercahaya. */
+.amplop:hover .amplop-kertas,
+.amplop[data-buka] .amplop-kertas {
+  box-shadow:
+    0 -3px 12px rgba(46, 42, 38, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.6) inset,
+    0 0 0 1.5px rgba(255, 253, 250, 0.95),
+    0 16px 30px -10px rgba(46, 42, 38, 0.32),
+    0 0 14px 2px rgba(255, 253, 250, 0.85),
+    0 0 42px 12px rgba(255, 253, 250, 0.5);
+  filter: brightness(1.035);
+}
+
+.amplop:hover .kertas-kilau,
+.amplop[data-buka] .kertas-kilau {
+  transform: translateX(130%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .amplop:hover:not([data-buka]) .amplop-kertas {
+    transform: translateY(-16%);
+  }
+}
+
+/* diklik: kertas meluncur keluar penuh */
+.amplop[data-buka] .amplop-kertas {
+  transform: translateY(-62%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amplop,
+  .amplop-tutup,
+  .amplop-kertas {
+    transition: none;
+  }
+}
+
+.link-garis {
+  position: relative;
+  text-decoration: none;
+}
+
+/* Coretan tangan, bukan garis lurus 1px.
+
+   Digambar sebagai SVG data-URI dengan `mask-image`, BUKAN `background`,
+   supaya warnanya tetap `currentColor` — jadi satu aturan ini melayani teks
+   gelap di krem maupun teks krem di atas kartu warna, tanpa varian.
+
+   `preserveAspectRatio="none"` sengaja TIDAK dipakai: kalau ombaknya
+   diregangkan mengikuti lebar tautan, tautan pendek dan panjang punya
+   panjang gelombang berbeda dan terbaca tidak konsisten. Ubinnya berukuran
+   tetap lalu diulang (`repeat-x`). */
+.link-garis::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.42em;
+  height: 0.4em;
+  width: 100%;
+  background: currentColor;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='7'%3E%3Cpath d='M0 4.6 Q5.5 1.9 11 3.9 T22 3.5 T33 4.2 T44 3.1' fill='none' stroke='%23000' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+  mask-repeat: repeat-x;
+  mask-position: left center;
+  mask-size: 44px 7px;
+
+  /* Digambar dari kiri seperti pena, bukan diregangkan: `clip-path` menahan
+     bentuk ombaknya. Dengan `scaleX` seperti versi lama, seluruh gelombang
+     terjepit lalu memuai — terbaca seperti per, bukan coretan. */
+  clip-path: inset(0 100% 0 0);
+  transition: clip-path 300ms var(--ease-out);
+}
+
+.link-garis:hover::after,
+.link-garis:focus-visible::after {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 460ms var(--ease-in);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .link-garis::after {
+    transition: none;
+  }
+}
+
+/* ── Bar musik di dasar layar ─────────────────────────────────────────── */
+
+/* Pembungkusnya yang digeser, bukan badannya — pegangan ikut turun bersama
+   bar, dan karena dia duduk DI ATAS badan, dialah yang tersisa terlihat
+   saat bar disembunyikan. */
+.bar-musik {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 60;
+  will-change: transform;
+}
+
+.bar-pegangan {
+  position: absolute;
+  right: 1.25rem;
+  top: -1.65rem;
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 1.65rem;
+  border: 1px solid var(--color-line);
+  border-bottom: 0;
+  border-radius: 0.7rem 0.7rem 0 0;
+  background: color-mix(in oklab, var(--color-bg) 94%, transparent);
+  color: var(--color-muted);
+  backdrop-filter: blur(6px);
+}
+
+/* Tingginya HARUS sama dengan `TINGGI_BADAN` di BarMusik.jsx — itu jarak
+   yang dipakai untuk menggesernya turun saat disembunyikan. */
+.bar-badan {
+  position: relative;
+  height: 4.5rem;
+  overflow: hidden;
+  border-top: 1px solid var(--color-line);
+  background: color-mix(in oklab, var(--color-bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.bar-isi {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  height: 100%;
+  padding: 0 1.25rem;
+}
+
+.bar-judul {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  min-width: 0;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-oleh {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+/* ── Tombol bundar musik ──────────────────────────────────────────────── */
+.musik-tombol {
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--color-line);
+  background: color-mix(in oklab, var(--color-bg) 85%, transparent);
+  color: var(--color-ink);
+  backdrop-filter: blur(4px);
+}
+
+/* ── Pemutar video: kontrol sendiri, bukan bawaan browser ─────────────── */
+
+/* Bidang (bukan tombol), jadi putih tembus pandang di sini BOLEH — dia
+   menyesuaikan diri ke kelima warna kartu tanpa lima varian. Aturan
+   "tombol harus opak" di 02-pesan §2.7 tidak berlaku untuk permukaan. */
+.pemutar-bingkai {
+  position: relative;
+  border-radius: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Tombol putar besar di tengah. Muncul hanya saat jeda — saat video
+   berjalan dia menutupi wajah orang yang sedang bicara. */
+.pemutar-putar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 4.6rem;
+  height: 4.6rem;
+  border-radius: 9999px;
+  background: var(--color-bg);
+  color: var(--color-ink);
+  box-shadow: 0 14px 30px -14px rgba(46, 42, 38, 0.6);
+}
+
+.pemutar-putar svg {
+  width: 1.7rem;
+  height: 1.7rem;
+  /* Segitiga putar terlihat berat sebelah kalau dipusatkan matematis —
+     digeser sedikit ke kanan supaya terbaca di tengah oleh mata. */
+  margin-left: 0.18rem;
+}
+
+/* Wadah target klik SENGAJA jauh lebih tinggi dari garisnya. Garis 3px
+   praktis mustahil dikenai jari maupun kursor. */
+.pemutar-progres {
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  height: 1.6rem;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 0.35rem;
+  cursor: pointer;
+}
+
+.pemutar-lintasan {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 3px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.45);
+  overflow: hidden;
+}
+
+/* `scaleX` dari kiri, bukan `width` — properti komposit murni, jadi
+   pembaruan tiap frame tidak memicu layout (aturan 05-pembuka §5.6.5). */
+.pemutar-isi {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: inherit;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+/* ── /penutup: kartu ucapan tercetak ──────────────────────────────────── */
+
+/* Kartu tebal di atas krem. Tepi emas setipis rambut — kalau lebih tebal
+   langsung terbaca murah, bukan mewah. */
+.kartu-penutup {
+  background: #fffdf8;
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(181, 139, 42, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 8px rgba(46, 42, 38, 0.07),
+    0 34px 80px -38px rgba(46, 42, 38, 0.5);
+}
+
+/* Angka "21" — ditulis sebagai angka, bukan dieja, supaya jadi jangkar mata
+   di halaman ini. Familjen Grotesk (font aksen situs), bukan Inter Tight
+   seperti sisa judulnya: perbedaan fontnya yang membuatnya terbaca sebagai
+   angka yang ditempel, bukan sebagai bagian kalimat.
+
+   Bobot 700 — perlu ditambahkan ke URL Google Fonts di index.html; sebelumnya
+   hanya 400 & 500 yang dimuat, dan browser akan memalsukannya jadi tebal
+   sintetis yang bentuknya rusak. */
+.angka-besar {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 700;
+  font-size: 1.42em;
+  line-height: 1;
+  color: var(--color-coral);
+  letter-spacing: -0.02em;
+}
+
+/* Foil emas. Gradasi tiga titik (tua → terang → tua) lalu digeser pelan:
+   itu yang membedakan foil dari sekadar teks kuning — logam menangkap
+   cahaya di satu pita sempit, bukan bersinar rata. */
+.foil {
+  background-image: linear-gradient(
+    100deg,
+    #a8791f 0%,
+    #b58b2a 32%,
+    #f4e6b4 46%,
+    #ffffff 50%,
+    #f0dca0 54%,
+    #b58b2a 68%,
+    #a8791f 100%
+  );
+  background-size: 260% 100%;
+  background-position: 120% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: foil-sapu 7s ease-in-out 0.8s infinite;
+}
+
+@keyframes foil-sapu {
+  0%, 62%, 100% { background-position: 120% 0; }
+  22%           { background-position: -40% 0; }
+}
+
+/* Pemisah bergaya undangan: garis rambut dengan wajik kecil di tengah. */
+.pemisah-hias {
+  position: relative;
+  height: 1px;
+  margin: clamp(2rem, 6vw, 3rem) auto;
+  width: 62%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(181, 139, 42, 0.45) 22%,
+    rgba(181, 139, 42, 0.45) 78%,
+    transparent
+  );
+}
+
+.pemisah-hias::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  translate: -50% -50%;
+  rotate: 45deg;
+  background: #fffdf8;
+  box-shadow: 0 0 0 1px rgba(181, 139, 42, 0.55);
+}
+
+.daftar-nama {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem clamp(1.1rem, 4vw, 2rem);
+  list-style: none;
+  font-size: clamp(0.95rem, 3.4vw, 1.15rem);
+  line-height: 1.3;
+}
+
+/* Tanpa hover. Sempat dicoba tiga versi (miring statis, cap-tekan yang
+   memantul, lalu coral+tebal+glow) — dihapus semuanya. `.nama-cetak` sekarang
+   murni penampung posisi, tidak ada `:hover` yang menyentuhnya di mana pun. */
+.nama-cetak {
+  position: relative;
+  display: inline-block;
+}
+
+/* Nama yang videonya SUDAH ditonton: bertinta, dengan titik warna kartunya
+   sebagai tanda baca kecil. */
+.nama-tinta {
+  color: var(--color-ink);
+}
+
+.nama-tinta::after {
+  content: '';
+  position: absolute;
+  right: -0.62rem;
+  top: 0.52em;
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--tinta, var(--color-ink));
+}
+
+/* Yang belum: EMBOSS BUTA — huruf ditekan ke kertas tanpa tinta, jadi cuma
+   terbaca dari bayangannya. Bayangan gelap di ATAS dan sorot terang di
+   BAWAH; dibalik, hurufnya akan terlihat timbul, bukan tertekan. */
+.nama-emboss {
+  color: transparent;
+  text-shadow:
+    0 -1px 0 rgba(46, 42, 38, 0.28),
+    0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foil {
+    animation: none;
+  }
+}
+
+/* ── Tombol "lanjut" di akhir surat ───────────────────────────────────── */
+
+/* Bahasa yang sama dengan tombol "masuk" di `/` — pil tinta pekat, teks
+   krem. Keduanya satu jenis tindakan (pintu ke babak berikutnya), dan
+   halaman terpanjang di situs ini butuh penutup yang jelas, bukan tautan
+   kecil yang mudah terlewat di ujung teks.
+
+   Versi sebelumnya teks + panah bergaris yang memanjang saat dihover;
+   dibuang — panahnya jadi ornamen yang harus dijelaskan, sementara tombol
+   pekat langsung terbaca sebagai "ditekan di sini". */
+.tombol-lanjut {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.55rem 2.1rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-line);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  font-size: 1rem;
+  text-decoration: none;
+  /* Tanpa bayangan. Tombol ini duduk di atas kertas surat yang sudah punya
+     bayangannya sendiri — bayangan kedua di atasnya membuat tombolnya
+     terbaca melayang di atas kertas, bukan tercetak di atasnya. */
+  transition:
+    transform 260ms var(--ease-out),
+    background 260ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .tombol-lanjut:hover,
+  .tombol-lanjut:focus-visible {
+    transform: translateY(-2px);
+  }
+}
+
+.tombol-lanjut:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tombol-lanjut {
+    transition: none;
+  }
+}
+
+.scramble {
+  font-variant-numeric: tabular-nums;
+  display: block;
+  min-height: 1em;
+}
+
+/* ── /surat: kertas di atas meja ──────────────────────────────────────
+   Kertas surat menyambung langsung dari amplop di /pesan: di sana selembar
+   kertas meluncur keluar lalu melebar memenuhi layar. Halaman ini adalah
+   lembar itu. */
+
+/* Meja. Tanpa lapis ini kertasnya tidak terbaca sebagai benda — krem kertas
+   dan krem halaman nyaris sama. Cukup digelapkan sedikit di tepi. */
+.latar-surat {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 120% 85% at 50% 28%,
+    transparent 38%,
+    rgba(46, 42, 38, 0.045) 72%,
+    rgba(46, 42, 38, 0.1) 100%
+  );
+}
+
+.kertas-surat {
+  z-index: 1;
+  background: #fffdf8;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 6px rgba(46, 42, 38, 0.06),
+    0 30px 70px -34px rgba(46, 42, 38, 0.45);
+}
+
+/* Garis margin buku tulis. Coral dari palet, bukan biru generik.
+   Ditarik ke bawah mengikuti progres baca (useKertasSurat), jadi elemen
+   sendiri — bukan ::before — supaya bisa di-scaleY. */
+.margin-garis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: clamp(1.5rem, 8%, 3.4rem);
+  width: 1px;
+  background: rgba(255, 122, 89, 0.3);
+  transform: scaleY(0);
+  transform-origin: top;
+  will-change: transform;
+}
+
+/* Isi surat berdiri di kanan garis margin. */
+.kertas-isi {
+  padding-left: clamp(2.6rem, 14%, 5.6rem);
+  padding-right: clamp(1.5rem, 8%, 3.4rem);
+}
+
+/* Bekas lipatan. Satu garis saja terbaca sebagai garis, bukan lipatan —
+   yang membuatnya jadi lipatan adalah pasangan gelap-di-atas /
+   terang-di-bawah, plus bayangan lebar yang sangat samar di sekitarnya. */
+.lipatan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(46, 42, 38, 0.11),
+    rgba(255, 255, 255, 0.85)
+  );
+  will-change: opacity;
+}
+
+.lipatan::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -11px;
+  height: 24px;
+  background: linear-gradient(
+    180deg,
+    transparent,
+    rgba(46, 42, 38, 0.04),
+    transparent
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lipatan {
+    opacity: 0;
+  }
+}
+
+/* Rembesan tinta di belakang kalimat pamungkas. Coral sangat samar, bukan
+   tinta gelap — di atas kertas krem, noda gelap terbaca sebagai kotor. */
+.rembesan {
+  position: absolute;
+  left: -12%;
+  top: 50%;
+  width: 124%;
+  height: 320%;
+  translate: 0 -50%;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 50% 42% at 34% 50%,
+    rgba(255, 122, 89, 0.14),
+    rgba(255, 122, 89, 0.05) 45%,
+    transparent 72%
+  );
+}
+
+/* Foto yang ditempel di badan surat. Bingkai putih tebal + bayangan pendek
+   = foto cetak di atas kertas, bukan gambar yang disisipkan ke dokumen.
+
+   `box-shadow`, BUKAN `filter: drop-shadow` — elemen ini di-`rotate` saat
+   masuk, dan drop-shadow memaksa raster ulang tiap perubahan (aturan
+   performa 05-pembuka §5.6.5). */
+.foto-surat {
+  align-self: center;
+  width: min(88%, 26rem);
+  margin: 0;
+  padding: 0.7rem 0.7rem 0;
+  background: #fffdf8;
+  border-radius: 2px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 2px 5px rgba(46, 42, 38, 0.08),
+    0 16px 34px -18px rgba(46, 42, 38, 0.45);
+}
+
+.foto-surat img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 1px;
+}
+
+/* Keterangan memakai font aksen — di kertas ini dialah yang terbaca sebagai
+   tulisan tangan di bawah foto, bukan caption cetakan. */
+.foto-surat figcaption {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  padding: 0.55rem 0.1rem 0.7rem;
+}
+
+/* Tanpa keterangan, tepi bawahnya disamakan dengan tepi kiri-kanan supaya
+   bingkainya tidak terlihat pincang. */
+.foto-surat:not(:has(figcaption)) {
+  padding-bottom: 0.7rem;
+}
+
+.surat-teks {
+  color: var(--color-ink);
+}
+
+/* Tiap kata dinaikkan opacity-nya satu per satu saat discroll.
+
+   Dulu paragraf ini memakai `background-clip: text` + `background-size`
+   yang di-scrub — satu pita menyapu seluruh paragraf. Rapi, tapi terbaca
+   seperti progress bar. Diganti per kata; efek sampingnya bug repaint
+   `-webkit-background-clip: text` di Safari tidak lagi relevan. */
+.surat-kata {
+  opacity: 0.2;
+  will-change: opacity;
+}
+
+.kartu-inersia {
+  --v: 0;    /* -1..1  arah + besar */
+  --va: 0;   /*  0..1  besar saja   */
+  transform:
+    skewX(calc(var(--v) * -9deg))
+    scaleY(calc(1 - var(--va) * 0.08))
+    scaleX(calc(1 + var(--va) * 0.04));
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Hover kartu /pesan: kilau menyapu + kartu yang di-hover di-highlight
+   (lebih terang + tepi cahaya + bayangan lebih dalam). Kartu lain tidak
+   disentuh sama sekali. */
+.kartu-kilau {
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.42) 50%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  transition: transform 0.7s var(--ease-smooth);
+}
+
+/* HP: kilaunya dijalankan sekali saat kartu masuk layar (`data-sapu` dari
+   BarisKartu). Aturan hover di bawah dikunci `@media (hover: hover)`, jadi
+   di layar sentuh kilau ini tidak akan pernah jalan tanpa pemicu sendiri —
+   dan sapuan sekali itulah yang membuat menggulir daftar terasa hidup. */
+.kartu-inersia[data-sapu] .kartu-kilau {
+  animation: kartu-sapu 0.85s var(--ease-smooth) 0.1s both;
+}
+
+@keyframes kartu-sapu {
+  from { transform: translateX(-130%); }
+  to   { transform: translateX(130%); }
+}
+
+/* Sorot hover dipicu `[data-sorot]` dari Motion (`onHoverStart`/`onHoverEnd`
+   di Kartu.jsx), BUKAN `:hover` CSS.
+
+   Alasannya bukan selera: Motion memakai `setPointerCapture` selama kartu
+   diseret. Selama capture aktif browser berhenti memperbarui `:hover`, dan
+   saat capture dilepas kartu-kartu yang terlewati kursor bisa tertinggal
+   dalam keadaan `:hover` SEKALIGUS — semua kartu tampak tersorot setelah
+   satu kali seret, dan baru pulih kalau dihover ulang satu per satu.
+   Keadaan yang dijaga JS tidak punya masalah itu.
+
+   TAPI memindahkannya ke JS saja belum cukup — sisa sorot masih bisa
+   terjadi kalau tiap kartu hanya membersihkan dirinya sendiri. Yang
+   menutup lubangnya adalah invarian "cuma satu kartu tersorot", ditegakkan
+   dari registry modul di Kartu.jsx. Jangan kembalikan ke sorot yang
+   dipegang sendiri-sendiri per kartu.
+
+   Tetap di dalam `@media (hover: hover)` supaya di layar sentuh tidak ada
+   sisa sorot sama sekali. */
+@media (hover: hover) and (pointer: fine) {
+  .kartu-inersia {
+    transition: box-shadow 0.25s var(--ease-smooth), filter 0.25s var(--ease-smooth);
+  }
+  .kartu-inersia[data-sorot] {
+    filter: brightness(1.05) saturate(1.12);
+    /* Tepi krim TUNGGAL terbaca jelas di atas warna solid kartu, tapi di
+       atas FOTO menyatu ke apa pun yang kebetulan ada di tepinya —
+       menghilang total kalau tepi fotonya kebetulan terang (dinding,
+       langit). Cincin gelap tipis ditambahkan MENDEKAP tepi kartu duluan
+       supaya ring-nya selalu punya kontras dulu sebelum krimnya —
+       terbaca di atas foto terang MAUPUN gelap, sekaligus di atas warna
+       solid seperti sebelumnya. */
+    box-shadow:
+      0 0 0 1px rgba(20, 16, 12, 0.3),
+      0 0 0 3px rgba(255, 253, 250, 0.85),
+      0 24px 48px -14px rgba(46, 42, 38, 0.5);
+  }
+  .kartu-inersia[data-sorot] .kartu-kilau {
+    transform: translateX(130%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kartu-inersia { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
