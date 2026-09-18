@@ -82,6 +82,18 @@ export default function Pesan() {
     else setAktif(null)
   }
 
+  /* Pasangan `lanjut`: video ber-video terdekat SEBELUM yang sedang main.
+     Kalau ini yang pertama, tidak terjadi apa-apa — menutup pemutar di sini
+     akan terasa seperti hukuman atas geseran yang meleset. */
+  const mundur = () => {
+    const i = messages.findIndex((m) => m.id === aktif.id)
+    const sebelum = messages
+      .slice(0, i)
+      .reverse()
+      .find((m) => m.video !== null)
+    if (sebelum) putar(sebelum)
+  }
+
   const lewati = () => {
     tandaiSemua(ADA_VIDEO)
     setSorot(null)
@@ -271,6 +283,7 @@ export default function Pesan() {
             pesan={aktif}
             onTutup={() => setAktif(null)}
             onLanjut={lanjut}
+            onMundur={mundur}
             onLewati={lewati}
           />
         )}

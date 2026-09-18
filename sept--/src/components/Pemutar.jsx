@@ -6,7 +6,7 @@ import { useMusic } from '../lib/MusicContext.jsx'
 import { useKunciScroll } from '../hooks/useKunciScroll.js'
 import Tombol from './Tombol.jsx'
 
-export default function Pemutar({ pesan, onTutup, onLanjut, onLewati }) {
+export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }) {
   const [muaiSelesai, setMuaiSelesai] = useState(false)
   const [berjalan, setBerjalan] = useState(false)
   const videoRef = useRef(null)
@@ -33,6 +33,7 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onLewati }) {
     const onKey = (e) => {
       if (e.key === 'Escape') onTutup()
       if (e.key === 'ArrowRight') onLanjut()
+      if (e.key === 'ArrowLeft') onMundur()
       /* Spasi = putar/jeda, kebiasaan universal pemutar video. `preventDefault`
          supaya halaman di belakangnya tidak ikut ter-scroll. */
       if (e.key === ' ') {
@@ -42,7 +43,7 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onLewati }) {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onTutup, onLanjut, putarJeda])
+  }, [onTutup, onLanjut, onMundur, putarJeda])
 
   /* Progres ditulis LANGSUNG ke DOM lewat rAF, bukan lewat state React.
 
@@ -96,13 +97,16 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onLewati }) {
       onTouchStart={(e) => { sentuhX.current = e.touches[0].clientX }}
       onTouchEnd={(e) => {
         const d = e.changedTouches[0].clientX - sentuhX.current
+        /* Arah geser mengikuti arah deretnya: ke kiri = video berikutnya,
+           ke kanan = video sebelumnya. Dulu geser ke kanan menutup pemutar —
+           itu menghukum gerakan yang paling wajar dipakai untuk mundur. */
         if (d < -60) onLanjut()
-        if (d > 60) onTutup()
+        if (d > 60) onMundur()
       }}
       /* `pb` besar: bar musik (`z-60`) duduk di atas overlay ini supaya
          mute tetap bisa ditekan saat video main — justru saat paling
-         dibutuhkan. Tanpa ruang ini, bar itu menutupi "lewati semua" dan
-         petunjuk geser di dasar overlay. */
+         dibutuhkan. Tanpa ruang ini, bar itu menutupi "lewati semua" di
+         dasar overlay. */
       className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 p-5 pt-8 pb-[7rem]"
       style={{ color: onHex(pesan.warna) }}
     >
@@ -212,8 +216,6 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onLewati }) {
       >
         lewati semua
       </motion.button>
-
-      <p className="text-sm opacity-60 md:hidden">geser ke kiri untuk lanjut</p>
     </motion.div>
   )
 }
