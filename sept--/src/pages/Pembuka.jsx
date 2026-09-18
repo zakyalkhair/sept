@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
+import KotakKado from '../components/KotakKado.jsx'
 import PageShell from '../components/PageShell.jsx'
 import Formasi21 from '../components/Formasi21.jsx'
 import TombolMasuk from '../components/TombolMasuk.jsx'
@@ -13,11 +14,25 @@ import { DUR, EASE } from '../lib/motion.js'
 
 export default function Pembuka() {
   const reduced = useReducedMotion()
-  useIntro()
+  const mulaiIntro = useIntro()
+  const [dibuka, setDibuka] = useState(false)
   const [formasiSelesai, setFormasiSelesai] = useState(false)
+
+  /* Dipanggil LANGSUNG di handler klik kado — lagu harus dinyalakan di
+     dalam gestur pengguna, kalau tidak browser menolaknya. */
+  const buka = () => {
+    mulaiIntro()
+    setDibuka(true)
+  }
 
   return (
     <PageShell className="relative grid min-h-dvh place-items-center overflow-hidden p-6">
+      <AnimatePresence>
+        {!dibuka && <KotakKado key="kado" onBuka={buka} />}
+      </AnimatePresence>
+
+      {dibuka && (
+      <>
       <CahayaSapu />
       <Grain />
 
@@ -84,6 +99,8 @@ export default function Pembuka() {
       >
         <TombolMasuk />
       </motion.div>
+      </>
+      )}
     </PageShell>
   )
 }

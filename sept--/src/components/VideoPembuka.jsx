@@ -18,7 +18,7 @@ export default function VideoPembuka({ jalan }) {
   if (!src || gagal) return null
 
   return (
-    <div className="w-[min(19rem,64vw)] overflow-hidden rounded-2xl shadow-[0_18px_40px_-18px_rgba(46,42,38,0.55)]">
+    <div className="w-[min(30rem,86vw)] overflow-hidden rounded-2xl shadow-[0_18px_40px_-18px_rgba(46,42,38,0.55)]">
       <video
         ref={ref}
         src={src}

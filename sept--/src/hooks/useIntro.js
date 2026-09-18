@@ -1,32 +1,28 @@
-import { useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
-/* Lagu pembuka halaman depan. Tanpa kontrol apa pun: menyala sendiri,
-   berhenti sendiri begitu halaman ini ditinggalkan (tombol "masuk"),
-   lalu daftar putar utama yang mengambil alih.
+/* Lagu pembuka halaman depan. Tanpa kontrol apa pun: dinyalakan oleh
+   `mulai()` (dipanggil saat kotak kado diklik), berhenti sendiri begitu
+   halaman ini ditinggalkan (tombol "masuk"), lalu daftar putar utama
+   yang mengambil alih.
 
-   Browser MELARANG audio berbunyi sebelum ada sentuhan — `play()` yang
-   ditolak bukan error, itu perilaku normal. Karena itu kalau ditolak,
-   sentuhan/ketikan/scroll PERTAMA di halaman dipakai sebagai pemicu. */
+   Browser MELARANG audio berbunyi sebelum ada sentuhan — karena itu
+   `mulai()` HARUS dipanggil langsung di dalam handler klik. */
 const BERKAS = '/musik/Intro.mp3'
 const VOLUME = 0.55
 const REDUP_MS = 600
 
 export function useIntro() {
+  const ref = useRef(null)
+
   useEffect(() => {
     const el = new Audio(BERKAS)
     el.loop = true
     el.volume = VOLUME
     el.preload = 'auto'
-
-    const peristiwa = ['pointerdown', 'keydown', 'touchstart', 'wheel']
-    const coba = () => el.play().then(lepas).catch(() => {})
-    const lepas = () => peristiwa.forEach((p) => window.removeEventListener(p, coba))
-
-    coba()
-    peristiwa.forEach((p) => window.addEventListener(p, coba, { passive: true }))
+    ref.current = el
 
     return () => {
-      lepas()
+      ref.current = null
       /* Diredupkan dulu, bukan dipotong: lagu daftar putar menyala di
          detik yang sama, dan dua lagu yang bertabrakan keras terdengar
          seperti bug. */
@@ -40,5 +36,9 @@ export function useIntro() {
         }
       }, 50)
     }
+  }, [])
+
+  return useCallback(() => {
+    ref.current?.play().catch(() => {})
   }, [])
 }
