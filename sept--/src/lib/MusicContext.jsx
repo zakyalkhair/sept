@@ -164,7 +164,7 @@ export function MusicProvider({ children }) {
     laguRef.current = lagu
 
     const el = audioRef.current
-    if (!el || !main) return
+    if (!el || !main || el.muted) return
     el.volume = 0
     el.play().catch(() => {})
     fadeKe(VOL_NORMAL)
@@ -176,6 +176,14 @@ export function MusicProvider({ children }) {
     const baru = !mute
     setMute(baru)
     el.muted = baru
+    /* `muted` saja tidak cukup: di iOS, begitu elemen dialirkan lewat
+       Web Audio (analyser), `muted` diabaikan dan lagunya tetap bunyi.
+       Jadi benar-benar di-pause / diputar lagi. */
+    if (baru) el.pause()
+    else {
+      ctxRef.current?.resume?.()
+      el.play().catch(() => {})
+    }
   }, [mute])
 
   /* Dipanggil pemutar video: kecilkan saat video main, kembalikan setelah. */
