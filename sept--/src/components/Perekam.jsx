@@ -147,13 +147,13 @@ export default function Perekam({ onTutup, onTerkirim }) {
       role="dialog"
       aria-modal="true"
       aria-label="Rekam video"
-      className="fixed inset-0 z-[65] flex flex-col items-center justify-center gap-4 bg-[rgba(20,16,12,0.92)] p-5 pb-[7rem] text-white"
+      className="fixed inset-0 z-[65] flex flex-col items-center justify-center gap-4 overflow-y-auto bg-[rgba(20,16,12,0.92)] p-5 pb-[7rem] text-white landscape:gap-2 landscape:pb-[4.5rem]"
     >
-      <h2 className="italic-accent text-[clamp(1.5rem,5vw,2.4rem)] leading-tight">
+      <h2 className="italic-accent text-[clamp(1.5rem,5vw,2.4rem)] leading-tight landscape:text-[clamp(1rem,3.2vh,1.5rem)]">
         {tahap === 'tinjau' ? 'sudah pas?' : 'rekam pesanmu'}
       </h2>
 
-      <div className="relative w-full max-w-[min(40rem,92vw,calc((100dvh-18rem)*16/9))]">
+      <div className="relative w-full max-w-[min(40rem,92vw,calc((100dvh-18rem)*16/9))] landscape:max-w-[min(40rem,94vw,calc((100dvh-9rem)*16/9))]">
         {live ? (
           <video
             ref={liveRef}

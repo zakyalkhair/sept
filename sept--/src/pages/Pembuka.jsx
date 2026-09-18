@@ -7,10 +7,13 @@ import CahayaSapu from '../components/CahayaSapu.jsx'
 import Grain from '../components/Grain.jsx'
 import TeksAcak from '../components/TeksAcak.jsx'
 import { useReducedMotion } from '../hooks/useReducedMotion.js'
+import { useIntro } from '../hooks/useIntro.js'
+import VideoPembuka from '../components/VideoPembuka.jsx'
 import { DUR, EASE } from '../lib/motion.js'
 
 export default function Pembuka() {
   const reduced = useReducedMotion()
+  useIntro()
   const [formasiSelesai, setFormasiSelesai] = useState(false)
 
   return (
@@ -22,14 +25,18 @@ export default function Pembuka() {
           terlihat (judul masih opacity 0); setelah selesai memudar jadi
           hantu samar + blur supaya tidak mengganggu keterbacaan judul. */}
       <motion.div
-        animate={{
-          opacity: formasiSelesai ? 0.3 : 1,
-          filter: formasiSelesai ? 'blur(3px)' : 'blur(0px)',
-        }}
+        animate={{ opacity: formasiSelesai ? 0.3 : 1 }}
         transition={{ duration: 1.6, ease: EASE.smooth, delay: 0.35 }}
-        className="relative z-10"
+        /* Blur DIPASANG SEKALI, tidak ikut dianimasikan: filter yang
+           berubah tiap frame memaksa 21 kartu + lapisan perspective
+           digambar ulang terus, dan itu yang bikin halaman ini berat.
+           Blur statis cukup dihitung sekali lalu dikomposit. */
+        style={{ filter: formasiSelesai ? 'blur(3px)' : 'none' }}
+        className="relative z-10 transition-[filter] duration-700"
       >
-        <Formasi21 varian="masuk" senggol onSelesai={() => setFormasiSelesai(true)} />
+        {/* `senggol` dimatikan begitu judul tersingkap — kartunya sudah
+           jadi latar, tidak perlu lagi mengejar kursor tiap gerakan. */}
+        <Formasi21 varian="masuk" senggol={!formasiSelesai} onSelesai={() => setFormasiSelesai(true)} />
       </motion.div>
 
       {/* Judul di lapisan depan — tersingkap setelah formasi selesai.
@@ -40,7 +47,7 @@ export default function Pembuka() {
         initial={{ opacity: 0 }}
         animate={{ opacity: formasiSelesai ? 1 : 0 }}
         transition={{ duration: DUR.enter, ease: EASE.in }}
-        className="h-display absolute z-20 select-none text-center text-[clamp(2.2rem,9vw,5.5rem)]"
+        className="h-display absolute z-20 -translate-y-[14vh] select-none text-center text-[clamp(2.2rem,9vw,5.5rem)]"
       >
         {/* Lewat TeksAcak (komponen daun), BUKAN `useScramble` langsung di
             sini — kalau langsung, tiap tick acak me-render ulang seluruh
@@ -57,6 +64,17 @@ export default function Pembuka() {
           className="scramble italic-accent block text-coral"
         />
       </motion.h1>
+
+      {/* Video kecil di bawah judul — datang setelah kedua baris judul
+          selesai terangkai (baris kedua `durasi` 2200ms). */}
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={formasiSelesai ? { opacity: 1, y: 0 } : {}}
+        transition={{ duration: DUR.enter, ease: EASE.in, delay: reduced ? 0 : 2.6 }}
+        className="absolute z-20 translate-y-[4vh]"
+      >
+        <VideoPembuka jalan={formasiSelesai} />
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 14 }}

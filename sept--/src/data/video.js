@@ -18,6 +18,11 @@ export const CLOUD = 'exswlgik'
         Restricted media types → HILANGKAN centang "Resource list". */
 export const UPLOAD_PRESET = 'ehc6b3ke'
 export const KARTU_REKAM = 21
+
+/* 1c — Video kecil di halaman pembuka, muncul setelah judul selesai.
+        Public ID di Cloudinary: `pembuka`. Kosongkan kalau belum diunggah
+        — tanpa itu, tidak ada apa pun yang dirender di sana. */
+export const VIDEO_PEMBUKA = 'pembuka'
 export const TAG_REKAM = 'adlin'
 
 /* 2 — Nomor kartu yang videonya SUDAH diunggah. Boleh diisi bertahap;
@@ -88,6 +93,11 @@ export async function siapkanRekaman() {
   } catch { /* offline / daftar dikunci: pakai simpanan lokal */ } finally {
     clearTimeout(t)
   }
+}
+
+export function urlVideoPembuka() {
+  if (!CLOUD || !VIDEO_PEMBUKA) return null
+  return `https://res.cloudinary.com/${CLOUD}/video/upload/f_auto,q_auto/${VIDEO_PEMBUKA}`
 }
 
 export function urlVideo(id) {

@@ -75,7 +75,7 @@ export default function Sorot({ pesan, onTutup, onPutar }) {
            koreksinya tidak sempurna untuk blur sebesar itu: sepanjang
            penerbangan bayangannya melar dan terbaca seperti noda gelap yang
            mengekor kartunya. */
-        className="pointer-events-auto w-[min(24rem,88vw)] overflow-hidden rounded-2xl p-4 shadow-[0_24px_50px_-16px_rgba(46,42,38,0.5)]"
+        className="pointer-events-auto w-[min(24rem,88vw)] overflow-hidden rounded-2xl p-4 landscape:w-[min(20rem,70vw)] landscape:p-3 shadow-[0_24px_50px_-16px_rgba(46,42,38,0.5)]"
         style={{ color: onHex(pesan.warna) }}
       >
         <motion.div

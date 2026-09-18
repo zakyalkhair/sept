@@ -22,6 +22,17 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }
 
   useKunciScroll()
 
+  /* Layar penuh diminta dari elemen VIDEO-nya, bukan dari overlay: di
+     iPhone, Fullscreen API tidak berlaku untuk elemen biasa — hanya
+     `webkitEnterFullscreen` milik <video> yang jalan. */
+  const layarPenuh = useCallback(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (document.fullscreenElement) document.exitFullscreen()
+    else if (v.requestFullscreen) v.requestFullscreen().catch(() => {})
+    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen()
+  }, [])
+
   const putarJeda = useCallback(() => {
     const v = videoRef.current
     if (!v) return
@@ -105,16 +116,16 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }
       }}
       /* `pb` besar: bar musik (`z-60`) duduk di atas overlay ini supaya
          mute tetap bisa ditekan saat video main — justru saat paling
-         dibutuhkan. Tanpa ruang ini, bar itu menutupi "lewati semua" di
-         dasar overlay. */
-      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 p-5 pt-8 pb-[7rem]"
+         dibutuhkan. Tanpa ruang ini, bar itu menutupi "lewati semua" dan
+         petunjuk geser di dasar overlay. */
+      className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 overflow-y-auto p-5 pt-8 pb-[7rem] landscape:gap-2 landscape:pt-3 landscape:pb-[4.5rem]"
       style={{ color: onHex(pesan.warna) }}
     >
       <motion.h2
         initial={{ opacity: 0, y: 12 }}
         animate={muaiSelesai ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: DUR.enter, ease: EASE.in, delay: 0.05 }}
-        className="italic-accent text-[clamp(1.75rem,5vw,3rem)] leading-tight"
+        className="italic-accent text-[clamp(1.75rem,5vw,3rem)] leading-tight landscape:text-[clamp(1.1rem,3.2vh,1.75rem)]"
       >
         {pesan.nama}
       </motion.h2>
@@ -123,7 +134,7 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }
         initial={{ opacity: 0, scale: 0.96 }}
         animate={muaiSelesai ? { opacity: 1, scale: 1 } : {}}
         transition={{ duration: DUR.enter, ease: EASE.in, delay: 0.12 }}
-        className="pemutar-bingkai w-full max-w-[min(46rem,92vw,calc((100dvh-19rem)*16/9))]"
+        className="pemutar-bingkai w-full max-w-[min(46rem,92vw,calc((100dvh-19rem)*16/9))] landscape:max-w-[min(46rem,94vw,calc((100dvh-9.5rem)*16/9))]"
       >
         {muaiSelesai && pesan.video && (
           <>
@@ -158,6 +169,18 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }
                 <path d="M8 5.2 L19 12 L8 18.8 Z" fill="currentColor" />
               </svg>
             </motion.button>
+
+            <button
+              type="button"
+              onClick={layarPenuh}
+              aria-label="Layar penuh"
+              data-kursor-teks="layar penuh"
+              className="absolute right-3 top-3 rounded-full bg-black/45 p-2 text-white backdrop-blur transition-colors hover:bg-black/65"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+              </svg>
+            </button>
 
             {/* Wadahnya jauh lebih tinggi dari garisnya sendiri — target
                 klik yang cuma setinggi 2px praktis mustahil dikenai. */}
@@ -216,6 +239,8 @@ export default function Pemutar({ pesan, onTutup, onLanjut, onMundur, onLewati }
       >
         lewati semua
       </motion.button>
+
+      <p className="text-sm opacity-60 md:hidden">geser ke kiri untuk lanjut</p>
     </motion.div>
   )
 }
