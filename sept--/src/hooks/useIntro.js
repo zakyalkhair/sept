@@ -21,24 +21,35 @@ export function useIntro() {
     el.preload = 'auto'
     ref.current = el
 
-    return () => {
-      ref.current = null
-      /* Diredupkan dulu, bukan dipotong: lagu daftar putar menyala di
-         detik yang sama, dan dua lagu yang bertabrakan keras terdengar
-         seperti bug. */
-      const awal = el.volume
-      const t = setInterval(() => {
-        el.volume = Math.max(0, el.volume - awal / (REDUP_MS / 50))
-        if (el.volume === 0) {
-          clearInterval(t)
-          el.pause()
-          el.src = ''
-        }
-      }, 50)
-    }
+    return () => hentikan(el)
   }, [])
 
-  return useCallback(() => {
+  const mulai = useCallback(() => {
     ref.current?.play().catch(() => {})
   }, [])
+
+  const stop = useCallback(() => hentikan(ref.current), [])
+
+  return { mulai, stop }
+}
+
+/* Diredupkan dulu, bukan dipotong: lagu daftar putar menyala di detik
+   yang sama. Jumlah langkah DIHITUNG, bukan menunggu volume = 0 —
+   di iOS `volume` hanya-baca, volumenya tidak pernah turun, dan dulu
+   lagunya jadi tidak pernah berhenti. */
+function hentikan(el) {
+  if (!el || el.dataset.berhenti) return
+  el.dataset.berhenti = '1'
+  const langkah = REDUP_MS / 50
+  const awal = el.volume
+  let n = 0
+  const t = setInterval(() => {
+    n += 1
+    el.volume = Math.max(0, awal * (1 - n / langkah))
+    if (n >= langkah) {
+      clearInterval(t)
+      el.pause()
+      el.src = ''
+    }
+  }, 50)
 }

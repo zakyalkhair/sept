@@ -14,7 +14,7 @@ import { DUR, EASE } from '../lib/motion.js'
 
 export default function Pembuka() {
   const reduced = useReducedMotion()
-  const mulaiIntro = useIntro()
+  const { mulai: mulaiIntro, stop: stopIntro } = useIntro()
   const [dibuka, setDibuka] = useState(false)
   const [formasiSelesai, setFormasiSelesai] = useState(false)
 
@@ -62,7 +62,7 @@ export default function Pembuka() {
         initial={{ opacity: 0 }}
         animate={{ opacity: formasiSelesai ? 1 : 0 }}
         transition={{ duration: DUR.enter, ease: EASE.in }}
-        className="h-display absolute z-20 -translate-y-[14vh] select-none text-center text-[clamp(2.2rem,9vw,5.5rem)]"
+        className="h-display absolute z-20 -translate-y-[19vh] select-none text-center text-[clamp(2.2rem,9vw,5.5rem)]"
       >
         {/* Lewat TeksAcak (komponen daun), BUKAN `useScramble` langsung di
             sini — kalau langsung, tiap tick acak me-render ulang seluruh
@@ -86,7 +86,7 @@ export default function Pembuka() {
         initial={{ opacity: 0, y: 18 }}
         animate={formasiSelesai ? { opacity: 1, y: 0 } : {}}
         transition={{ duration: DUR.enter, ease: EASE.in, delay: reduced ? 0 : 2.6 }}
-        className="absolute z-20 translate-y-[4vh]"
+        className="absolute z-20 translate-y-[7vh]"
       >
         <VideoPembuka jalan={formasiSelesai} />
       </motion.div>
@@ -97,7 +97,7 @@ export default function Pembuka() {
         transition={{ duration: DUR.enter, ease: EASE.in, delay: reduced ? 0 : 1.4 }}
         className="absolute bottom-[8vh] z-30"
       >
-        <TombolMasuk />
+        <TombolMasuk onMasuk={stopIntro} />
       </motion.div>
       </>
       )}

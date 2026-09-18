@@ -35,7 +35,6 @@ export default function KotakKado({ onBuka }) {
         <path d="M60 38 C76 20 90 26 84 36 C80 42 66 40 60 38 Z" fill="#f6d28b" />
         <circle cx="60" cy="37" r="5" fill="#e9b85f" />
       </motion.svg>
-      <span className="text-sm tracking-[0.2em] uppercase opacity-60">ketuk untuk membuka</span>
     </motion.button>
   )
 }

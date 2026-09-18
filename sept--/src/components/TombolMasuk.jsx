@@ -2,12 +2,13 @@ import Tombol from './Tombol.jsx'
 import { useMusic } from '../lib/MusicContext.jsx'
 import { useTransisi } from '../lib/TransisiContext.jsx'
 
-export default function TombolMasuk() {
+export default function TombolMasuk({ onMasuk }) {
   const { nyalakan } = useMusic()
   const { mulai } = useTransisi()
 
   const masuk = (e) => {
     /* play() harus di dalam gestur — panggil dulu, jangan di-await. */
+    onMasuk?.()
     nyalakan()
     const r = e.currentTarget.getBoundingClientRect()
     mulai('/pesan', r.left + r.width / 2, r.top + r.height / 2)
